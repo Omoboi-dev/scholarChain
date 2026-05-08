@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { BrowserProvider, JsonRpcProvider, Contract } from "ethers";
-import { ABI } from "../data/ABI.js";
-import { CONTRACT_ADDRESSES } from "../data/contracts";
+import FactoryABI from "../constants/FactoryABI.json";
+import GrantPoolABI from "../constants/GrantPoolABI.json";
 import type { GrantPool, PoolState } from "../types";
 
 const SEPOLIA_RPC =
@@ -52,7 +52,7 @@ function mapSummary(s: any): GrantPool {
 }
 
 function getProvider(): BrowserProvider | JsonRpcProvider {
-  if (window.ethereum) return new BrowserProvider(window.ethereum);
+  if (window.ethereum) return new BrowserProvider(window.ethereum as any);
   return new JsonRpcProvider(SEPOLIA_RPC);
 }
 
@@ -68,8 +68,8 @@ export function useProtocol(walletAddress?: string | null) {
     try {
       const provider = getProvider();
       const factory  = new Contract(
-        CONTRACT_ADDRESSES.ScholarChainFactory,
-        ABI.Factory,
+        (import.meta.env.VITE_FACTORY_CONTRACT_ADDRESS as string) || "0x0Ac0cBF23279be96A31618B45A7EA65C603e0825",
+        FactoryABI,
         provider,
       );
 
@@ -85,7 +85,7 @@ export function useProtocol(walletAddress?: string | null) {
       if (walletAddress) {
         const signerFlags = await Promise.all(
           mapped.map((pool) => {
-            const pc = new Contract(pool.address, ABI.GrantPool, provider);
+            const pc = new Contract(pool.address, GrantPoolABI, provider);
             return (pc.isSigner(walletAddress) as Promise<boolean>).catch(() => false);
           }),
         );
